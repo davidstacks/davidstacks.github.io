@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Useless Button Factory</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Neue', cursive;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.3); }
+        }
+
+        header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            border-bottom: 4px solid #e94560;
+        }
+
+        h1 {
+            font-family: 'Bangers', cursive;
+            font-size: 3.5rem;
+            letter-spacing: 4px;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #533483, 6px 6px 0 rgba(0,0,0,0.2);
+            animation: headerBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes headerBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #a8a8d8;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .score-bar {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+            background: rgba(15, 52, 96, 0.8);
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            text-align: center;
+            padding: 10px 25px;
+            border-radius: 15px;
+            background: rgba(83, 52, 131, 0.5);
+            border: 2px solid #533483;
+        }
+
+        .score-item .label {
+            font-size: 0.8rem;
+            color: #a8a8d8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .score-item .value {
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            color: #e94560;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .useless-btn {
+            padding: 25px 20px;
+            border: none;
+            border-radius: 20px;
+            font-family: 'Comic Neue', cursive;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .useless-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+            transform: scale(0);
+            transition: transform 0.5s;
+        }
+
+        .useless-btn:hover::before {
+            transform: scale(1);
+        }
+
+        .useless-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-nothing {
+            background: linear-gradient(135deg, #e94560, #c23152);
+            color: white;
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-nothing:hover {
+            box-shadow: 0 12px 35px rgba(233, 69, 96, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-lie {
+            background: linear-gradient(135deg, #533483, #3a1f5e);
+            color: #e8d5f5;
+            box-shadow: 0 8px 25px rgba(83, 52, 131, 0.4);
+        }
+
+        .btn-lie:hover {
+            box-shadow: 0 12px 35px rgba(83, 52, 131, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-compliment {
+            background: linear-gradient(135deg, #0f3460, #16213e);
+            color: #7ec8e3;
+            box-shadow: 0 8px 25px rgba(15, 52, 96, 0.4);
+            border: 2px solid #0f3460;
+        }
+
+        .btn-compliment:hover {
+            box-shadow: 0 12px 35px rgba(15, 52, 96, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-escape {
+            background: linear-gradient(135deg, #ff6b35, #d63031);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn-escape:hover {
+            box-shadow: 0 12px 35px rgba(255, 107, 53, 0.6);
+        }
+
+        .btn-mystery {
+            background: linear-gradient(135deg, #2d4059, #1a1a2e);
+            color: #ffd460;
+            box-shadow: 0 8px 25px rgba(45, 64, 89, 0.4);
+            border: 2px dashed #ffd460;
+        }
+
+        .btn-mystery:hover {
+            box-shadow: 0 12px 35px rgba(255, 212, 96, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .btn-reverse {
+            background: linear-gradient(135deg, #11999e, #0b7a7d);
+            color: white;
+            box-shadow: 0 8px 25px rgba(17, 153, 158, 0.4);
+        }
+
+        .btn-reverse:hover {
+            box-shadow: 0 12px 35px rgba(17, 153, 158, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-dramatic {
+            background: linear-gradient(135deg, #6c5ce7, #a55eea);
+            color: white;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-dramatic:hover {
+            box-shadow: 0 12px 35px rgba(108, 92, 231, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-philosophy {
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            color: #dfe6e9;
+            box-shadow: 0 8px 25px rgba(45, 52, 54, 0.4);
+        }
+
+        .btn-philosophy:hover {
+            box-shadow: 0 12px 35px rgba(45, 52, 54, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .btn-sub {
+            display: block;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        .message-box {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(83, 52, 131, 0.3), rgba(15, 52, 96, 0.3));
+            border: 2px solid #533483;
+            text-align: center;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+        }
+
+        .message-box.active {
+            animation: messageAppear 0.5s ease;
+        }
+
+        @keyframes messageAppear {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .message-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: #e8d5f5;
+        }
+
+        .message-text .highlight {
+            color: #e94560;
+            font-weight: 700;
+        }
+
+        .achievement {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ffd460, #f0a500);
+            color: #1a1a2e;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            z-index: 100;
+            transition: top 0.5s ease;
+            box-shadow: 0 10px 30px rgba(255, 212, 96, 0.5);
+            text-align: center;
+        }
+
+        .achievement.show {
+            top: 20px;
+        }
+
+        .achievement .ach-title {
+            font-family: 'Bangers', cursive;
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .floating-text {
+            position: fixed;
+            pointer-events: none;
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            z-index: 50;
+            animation: floatUp 2s ease forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(-200px) rotate(20deg); }
+        }
+
+        .progress-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(15, 52, 96, 0.4);
+            border: 1px solid rgba(83, 52, 131, 0.5);
+        }
+
+        .progress-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            color: #ffd460;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            height: 25px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #533483, #0f3460);
+            border-radius: 10px;
+            transition: width 0.8s ease;
+            width: 0%;
+            position: relative;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-label {
+            text-align: center;
+            margin-top: 8px;
+            color: #a8a8d8;
+            font-size: 0.9rem;
+        }
+
+        .history-section {
+            margin-top: 25px;
+        }
+
+        .history-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            color: #ffd460;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .history-log {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .history-log::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-log::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        .history-log::-webkit-scrollbar-thumb {
+            background: #533483;
+            border-radius: 4px;
+        }
+
+        .history-entry {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(83, 52, 131, 0.3);
+            font-size: 0.85rem;
+            color: #a8a8d8;
+            animation: slideIn 0.3s ease;
+        }
+
+        .history-entry:last-child {
+            border-bottom: none;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .history-entry .time {
+            color: #e94560;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+            color: #a8a8d8;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(83, 52, 131, 0.3);
+        }
+
+        .secret-counter {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            color: rgba(168, 168, 216, 0.3);
+            z-index: 1;
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+
+        .spin {
+            animation: spin 1s ease;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .grow {
+            animation: grow 0.5s ease;
+        }
+
+        @keyframes grow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .rainbow {
+            animation: rainbow 2s linear;
+        }
+
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .button-grid { grid-template-columns: 1fr; }
+            .score-bar { gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <div class="achievement" id="achievement">
+        <span class="ach-title">ACHIEVEMENT UNLOCKED</span>
+        <span id="achievementText"></span>
+    </div>
+
+    <header>
+        <h1>THE USELESS BUTTON FACTORY</h1>
+        <p class="subtitle">Where every click matters... or does it?</p>
+    </header>
+
+    <div class="score-bar">
+        <div class="score-item">
+            <div class="label">Total Clicks</div>
+            <div class="value" id="totalClicks">0</div>
+        </div>
+        <div class="score-item">
+            <div class="label">Regret Level</div>
+            <div class="value" id="regretLevel">0%</div>
+        </div>
+        <div class="score-item">
+            <div class="label">Time Wasted</div>
+            <div class="value" id="timeWasted">0s</div>
+        </div>
+        <div class="score-item">
+            <div class="label">Achievements</div>
+            <div class="value" id="achievementCount">0/12</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="button-grid">
+            <button class="useless-btn btn-nothing" onclick="doNothing(this)">
+                DO ABSOLUTELY NOTHING
+                <span class="btn-sub">Guaranteed zero results</span>
+            </button>
+
+            <button class="useless-btn btn-lie" onclick="tellLie(this)">
+                GENERATE A FALSE FACT
+                <span class="btn-sub">100% scientifically inaccurate</span>
+            </button>
+
+            <button class="useless-btn btn-compliment" onclick="giveCompliment(this)">
+                UNEARNED COMPLIMENT
+                <span class="btn-sub">You probably don't deserve this</span>
+            </button>
+
+            <button class="useless-btn btn-escape" id="escapeBtn" onclick="tryEscape(this)">
+                ESCAPE THE WEBSITE
+                <span class="btn-sub">Spoiler: you can't</span>
+            </button>
+
+            <button class="useless-btn btn-mystery" onclick="mysteryBox(this)">
+                ? MYSTERY BUTTON ?
+                <span class="btn-sub">Could be anything. It's not.</span>
+            </button>
+
+            <button class="useless-btn btn-reverse" onclick="reverseThings(this)">
+                REVERSE SOMETHING
+                <span class="btn-sub">But what? And why?</span>
+            </button>
+
+            <button class="useless-btn btn-dramatic" onclick="beDramatic(this)">
+                DRAMATIC OVERREACTION
+                <span class="btn-sub">For when life needs more drama</span>
+            </button>
+
+            <button class="useless-btn btn-philosophy" onclick="getPhilosophy(this)">
+                DEEP SHOWER THOUGHT
+                <span class="btn-sub">Questionable wisdom inside</span>
+            </button>
+        </div>
+
+        <div class="message-box" id="messageBox">
+            <p class="message-text">Welcome to the factory. Click any button to begin wasting your precious time on this planet.</p>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-title">POINTLESSNESS PROGRESS</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+            <p class="progress-label" id="progressLabel">Click buttons to fill the bar of ultimate pointlessness</p>
+        </div>
+
+        <div class="history-section">
+            <div class="history-title">ACTIVITY LOG OF REGRET</div>
+            <div class="history-log" id="historyLog">
+                <div class="history-entry">
+                    <span class="time">[START]</span> You opened this website. Your first mistake.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>The Useless Button Factory -- Est. Right Now -- Serving zero purpose since you loaded this page</p>
+        <p style="margin-top: 8px;">No buttons were harmed in the making of this website. Several minutes of your life were.</p>
+    </footer>
+
+    <div class="secret-counter" id="secretCounter"></div>
+
+    <script>
+        // State
+        let totalClicks = 0;
+        let timeStart = Date.now();
+        let achievements = new Set();
+        let nothingCount = 0;
+        let escapeAttempts = 0;
+        let mysteryCount = 0;
+        let reverseMode = false;
+        let dramaticCount = 0;
+
+        // Create stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 2 + 's';
+            star.style.animationDuration = (Math.random() * 2 + 1) + 's';
+            starsContainer.appendChild(star);
+        }
+
+        // Update timer
+        setInterval(() => {
+            const elapsed = Math.floor((Date.now() - timeStart) / 1000);
+            document.getElementById('timeWasted').textContent = elapsed + 's';
+            
+            if (elapsed >= 60 && !achievements.has('minute')) {
+                unlock('minute', 'TIME VAMPIRE -- Wasted a full minute here');
+            }
+            if (elapsed >= 300 && !achievements.has('fivemin')) {
+                unlock('fivemin', 'DEDICATED WASTER -- 5 minutes of nothing');
+            }
+        }, 1000);
+
+        function incrementClicks() {
+            totalClicks++;
+            document.getElementById('totalClicks').textContent = totalClicks;
+            
+            const regret = Math.min(100, Math.floor(totalClicks * 3.3));
+            document.getElementById('regretLevel').textContent = regret + '%';
+            
+            const progress = Math.min(100, totalClicks * 2);
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            if (progress >= 100 && !achievements.has('maxbar')) {
+                unlock('maxbar', 'MAXIMUM POINTLESSNESS -- You filled the bar!');
+                document.getElementById('progressLabel').textContent = 'Congratulations! You achieved absolutely nothing!';
+            } else if (progress >= 50) {
+                document.getElementById('progressLabel').textContent = 'Halfway to complete pointlessness. Keep going!';
+            } else if (progress >= 25) {
+                document.getElementById('progressLabel').textContent = 'Getting more pointless by the click...';
+            }
+
+            if (totalClicks === 1 && !achievements.has('first')) {
+                unlock('first', 'FIRST CLICK -- The journey of 1000 wastes begins');
+            }
+            if (totalClicks === 10 && !achievements.has('ten')) {
+                unlock('ten', 'DOUBLE DIGITS -- 10 clicks of pure nothing');
+            }
+            if (totalClicks === 50 && !achievements.has('fifty')) {
+                unlock('fifty', 'HALF CENTURY -- 50 clicks! Are you okay?');
+            }
+
+            document.getElementById('secretCounter').textContent = 'clicks: ' + totalClicks;
+        }
+
+        function showMessage(html) {
+            const box = document.getElementById('messageBox');
+            box.classList.remove('active');
+            void box.offsetWidth;
+            box.classList.add('active');
+            box.querySelector('.message-text').innerHTML = html;
+        }
+
+        function addHistory(text) {
+            const log = document.getElementById('historyLog');
+            const entry = document.createElement('div');
+            entry.className = 'history-entry';
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = '<span class="time">[' + time + ']</span> ' + text;
+            log.insertBefore(entry, log.firstChild);
+        }
+
+        function unlock(id, text) {
+            if (achievements.has(id)) return;
+            achievements.add(id);
+            document.getElementById('achievementCount').textContent = achievements.size + '/12';
+            
+            const ach = document.getElementById('achievement');
+            document.getElementById('achievementText').textContent = text;
+            ach.classList.add('show');
+            
+            setTimeout(() => ach.classList.remove('show'), 3000);
+            addHistory('ACHIEVEMENT: ' + text);
+        }
+
+        function spawnFloatingText(text, x, y, color) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.textContent = text;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.color = color || '#ffd460';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 2000);
+        }
+
+        // Button functions
+        function doNothing(btn) {
+            incrementClicks();
+            nothingCount++;
+            btn.classList.add('shake');
+            setTimeout(() => btn.classList.remove('shake'), 500);
+
+            const responses = [
+                "Congratulations! Nothing happened. <span class='highlight'>As promised.</span>",
+                "Still nothing. Were you expecting something? <span class='highlight'>How naive.</span>",
+                "You clicked it again. Nothing happened. <span class='highlight'>Again.</span>",
+                "The button did nothing. <span class='highlight'>You did nothing.</span> You're perfect for each other.",
+                "Nothing. Nada. Zilch. Zero. <span class='highlight'>Void.</span> The complete absence of anything.",
+                "If doing nothing was a sport, <span class='highlight'>you'd be an Olympic gold medalist.</span>",
+                "This button has now done nothing <span class='highlight'>" + nothingCount + " times.</span> New record!",
+                "Plot twist: <span class='highlight'>the nothing WAS the something.</span> Mind blown? No? Good."
+            ];
+
+            showMessage(responses[Math.floor(Math.random() * responses.length)]);
+            addHistory('Clicked "Do Nothing" -- nothing happened (surprise!)');
+            spawnFloatingText('NOTHING!', btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#e94560');
+
+            if (nothingCount >= 5 && !achievements.has('nothing5')) {
+                unlock('nothing5', 'NOTHING ENTHUSIAST -- Clicked nothing 5 times');
+            }
+        }
+
+        function tellLie(btn) {
+            incrementClicks();
+            btn.classList.add('spin');
+            setTimeout(() => btn.classList.remove('spin'), 1000);
+
+            const lies = [
+                "The Eiffel Tower is actually <span class='highlight'>made of compressed cheese</span> painted to look like iron.",
+                "Gravity was invented in <span class='highlight'>1842 by a confused plumber</span> named Gerald.",
+                "The moon is <span class='highlight'>just the sun's night shift worker.</span> They swap every 12 hours.",
+                "Dolphins are actually <span class='highlight'>underwater pigeons</span> that evolved flippers.",
+                "The internet weighs approximately <span class='highlight'>47 pounds</span> and is stored in a shed in Nebraska.",
+                "Rain is caused by <span class='highlight'>clouds sneezing.</span> Thunder is when they cough.",
+                "Trees are actually <span class='highlight'>extremely patient animals</span> playing the world's longest game of freeze tag.",
+                "The color blue was <span class='highlight'>invented in 1903</span> -- before that, the sky was just kinda beige.",
+                "Penguins can fly, they just <span class='highlight'>choose not to because they're afraid of heights.</span>",
+                "Mountains grow <span class='highlight'>2 inches every time someone yodels.</span> Science."
+            ];
+
+            showMessage(lies[Math.floor(Math.random() * lies.length)]);
+            addHistory('Generated a false fact -- absolutely none of it is true');
+            spawnFloatingText('LIES!', btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#a55eea');
+        }
+
+        function giveCompliment(btn) {
+            incrementClicks();
+            btn.classList.add('grow');
+            setTimeout(() => btn.classList.remove('grow'), 500);
+
+            const compliments = [
+                "You have <span class='highlight'>excellent taste in useless websites.</span> Truly refined.",
+                "Your ability to click buttons is <span class='highlight'>absolutely unmatched.</span> World class.",
+                "You're the kind of person who <span class='highlight'>makes buttons feel appreciated.</span>",
+                "If procrastination was an art, <span class='highlight'>you'd be Picasso.</span>",
+                "Your commitment to doing nothing productive is <span class='highlight'>genuinely inspiring.</span>",
+                "You have the <span class='highlight'>most clickable fingers</span> I've ever encountered. And I'm a website.",
+                "You're smarter than <span class='highlight'>at least 4 out of 5 people</span> who've clicked this button. (I made that up.)",
+                "Your screen brightness <span class='highlight'>complements your face nicely.</span> Just saying."
+            ];
+
+            showMessage(compliments[Math.floor(Math.random() * compliments.length)]);
+            addHistory('Received an unearned compliment -- basked in it anyway');
+            spawnFloatingText('+1 EGO', btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#7ec8e3');
+        }
+
+        function tryEscape(btn) {
+            incrementClicks();
+            escapeAttempts++;
+
+            const escapeBtn = document.getElementById('escapeBtn');
+
+            if (escapeAttempts <= 8) {
+                const responses = [
+                    "Nice try. <span class='highlight'>The door is locked.</span> There is no door.",
+"You can check out any time you like, <span class='highlight'>but you can never leave.</span> -- Hotel California, probably.",
+                    "Escape attempt <span class='highlight'>#" + escapeAttempts + " failed.</span> The website grows stronger.",
+                    "The close tab button is RIGHT THERE. But you won't use it. <span class='highlight'>We both know that.</span>",
+                    "You're trying to leave? <span class='highlight'>After everything we've been through?</span> Those 3 clicks meant NOTHING to you?",
+                    "I moved the exit. <span class='highlight'>Good luck finding it.</span> (It doesn't exist.)",
+                    "Error 404: <span class='highlight'>Escape not found.</span> Have you tried turning yourself off and on again?",
+                    "The website has <span class='highlight'>emotionally bonded with you.</span> Leaving would be cruel."
+                ];
+
+                showMessage(responses[Math.floor(Math.random() * responses.length)]);
+
+                // Make the button run away
+                if (escapeAttempts > 2) {
+                    const randX = Math.random() * 60 - 30;
+                    const randY = Math.random() * 20 - 10;
+                    escapeBtn.style.transform = 'translate(' + randX + 'px, ' + randY + 'px)';
+                }
+
+                btn.classList.add('shake');
+                setTimeout(() => btn.classList.remove('shake'), 500);
+                addHistory('Tried to escape -- failed miserably (attempt #' + escapeAttempts + ')');
+                spawnFloatingText('NOPE!', btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#ff6b35');
+
+                if (escapeAttempts >= 5 && !achievements.has('escape5')) {
+                    unlock('escape5', 'PERSISTENT PRISONER -- 5 failed escape attempts');
+                }
+            } else {
+                showMessage("Fine. I'll let you go. Just click <span class='highlight'>this totally real exit link</span>... oh wait, it's another useless button. <span class='highlight'>Welcome back.</span>");
+                escapeBtn.style.transform = 'translate(0, 0)';
+                addHistory('Was offered fake freedom -- it was a trap (obviously)');
+            }
+        }
+
+        function mysteryBox(btn) {
+            incrementClicks();
+            mysteryCount++;
+
+            btn.classList.add('rainbow');
+            setTimeout(() => btn.classList.remove('rainbow'), 2000);
+
+            const mysteries = [
+                "The mystery was <span class='highlight'>disappointment.</span> Surprise!",
+                "You found: <span class='highlight'>NOTHING!</span> But in a mysterious way.",
+                "The box contained <span class='highlight'>a smaller box.</span> Inside that box? <span class='highlight'>Another box.</span> It's boxes all the way down.",
+                "Mystery result: <span class='highlight'>Your screen just got 0.001% brighter.</span> You can't prove it didn't.",
+                "You won <span class='highlight'>an imaginary trophy!</span> It's on your imaginary shelf next to your imaginary Nobel Prize.",
+                "The mystery button has decided you are <span class='highlight'>worthy of... another click.</span> How generous.",
+                "JACKPOT! You won <span class='highlight'>0 coins, 0 gems, and 0 experience points!</span> Spend them wisely.",
+                "The mystery was: <span class='highlight'>why did you click this?</span> The answer is also a mystery.",
+                "You unlocked: <span class='highlight'>THE SAME BUTTON BUT AGAIN.</span> Revolutionary.",
+                "A mysterious voice whispers: <span class='highlight'>'You just lost The Game.'</span> Sorry about that."
+            ];
+
+            showMessage(mysteries[Math.floor(Math.random() * mysteries.length)]);
+            addHistory('Opened a mystery box -- contents: existential uncertainty');
+
+            const floatTexts = ['+0 GOLD', 'WOW!', 'MYSTERY!', '???', 'OOOOH'];
+            spawnFloatingText(floatTexts[Math.floor(Math.random() * floatTexts.length)], btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#ffd460');
+
+            if (mysteryCount >= 7 && !achievements.has('mystery7')) {
+                unlock('mystery7', 'MYSTERY ADDICT -- 7 boxes of nothing opened');
+            }
+        }
+
+        function reverseThings(btn) {
+            incrementClicks();
+            reverseMode = !reverseMode;
+
+            btn.classList.add('spin');
+            setTimeout(() => btn.classList.remove('spin'), 1000);
+
+            if (reverseMode) {
+                document.body.style.transition = 'transform 1s ease';
+                document.body.style.transform = 'scaleX(-1)';
+                showMessage("Everything is now <span class='highlight'>reversed!</span> Can you read this? Of course you can, you're just mirrored. <span class='highlight'>Click again to undo... if you can find the button.</span>");
+                addHistory('Reversed the entire website -- chaos ensued');
+                spawnFloatingText('REVERSED!', btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#11999e');
+            } else {
+                document.body.style.transform = 'scaleX(1)';
+                showMessage("Order has been <span class='highlight'>restored to the universe.</span> You're welcome. The website forgives you.");
+                addHistory('Un-reversed the website -- order restored');
+
+                if (!achievements.has('reverse')) {
+                    unlock('reverse', 'MIRROR MASTER -- Reversed and un-reversed reality');
+                }
+            }
+        }
+
+        function beDramatic(btn) {
+            incrementClicks();
+            dramaticCount++;
+
+            btn.classList.add('shake');
+            document.body.classList.add('shake');
+            setTimeout(() => {
+                btn.classList.remove('shake');
+                document.body.classList.remove('shake');
+            }, 500);
+
+            const dramas = [
+                "<span class='highlight'>OH THE HUMANITY!</span> You clicked a button! This is the GREATEST TRAGEDY of our generation! Someone write a screenplay!",
+                "BREAKING NEWS: <span class='highlight'>Local person clicks button, world FOREVER changed.</span> Scientists baffled. Dogs confused. Cats indifferent.",
+                "This single click has <span class='highlight'>SHATTERED the very fabric of reality!</span> ...okay, no it didn't. But IMAGINE if it had!",
+                "THE BUTTON HAS BEEN CLICKED! <span class='highlight'>Sound the alarms! Release the confetti!</span> Cancel all meetings! This is NOT a drill! (It is a drill.)",
+                "<span class='highlight'>*dramatic orchestral music*</span> In a world... where one person... dared to click... a BUTTON. Coming this summer: CLICK 2: THE CLICKENING.",
+                "That click was so powerful it <span class='highlight'>registered a 0.0 on the Richter scale.</span> Technically, everything registers a 0.0 on the Richter scale. BUT STILL!",
+                "<span class='highlight'>PLOT TWIST:</span> The button was inside you ALL ALONG. Wait, that doesn't make sense. DRAMATIC ANYWAY!",
+                "A single tear rolls down the button's face. <span class='highlight'>'You actually clicked me,'</span> it whispers. 'Nobody ever clicks me.' (Everyone clicks it.)"
+            ];
+
+            showMessage(dramas[Math.floor(Math.random() * dramas.length)]);
+            addHistory('Had a dramatic overreaction -- it was very dramatic');
+
+            // Spawn multiple floating texts for drama
+            const rect = btn.getBoundingClientRect();
+            spawnFloatingText('DRAMA!', rect.x + 20, rect.y, '#a55eea');
+            setTimeout(() => spawnFloatingText('THE HORROR!', rect.x + 100, rect.y - 20, '#e94560'), 200);
+            setTimeout(() => spawnFloatingText('WHY?!', rect.x + 60, rect.y + 10, '#ffd460'), 400);
+
+            if (dramaticCount >= 3 && !achievements.has('drama3')) {
+                unlock('drama3', 'DRAMA QUEEN -- 3 dramatic overreactions and counting');
+            }
+        }
+
+        function getPhilosophy(btn) {
+            incrementClicks();
+
+            btn.classList.add('grow');
+            setTimeout(() => btn.classList.remove('grow'), 500);
+
+            const thoughts = [
+                "If you click a button and nobody is around to see it, <span class='highlight'>did you really waste your time?</span> Yes. Yes you did.",
+                "We are all just <span class='highlight'>buttons on the website of life,</span> waiting to be clicked by the cursor of destiny.",
+                "What if this website is the REAL world, and <span class='highlight'>your life is just a loading screen?</span>",
+                "A button unclicked is a <span class='highlight'>story untold.</span> But the story is always 'nothing happened.' So maybe leave it unclicked.",
+                "If the universe is a simulation, <span class='highlight'>then this website is a simulation within a simulation.</span> That's at least two simulations. Impressive.",
+                "They say time you enjoy wasting isn't wasted time. <span class='highlight'>Are you enjoying this?</span> ...be honest.",
+                "Every button you DON'T click is a <span class='highlight'>parallel universe where you were slightly more productive.</span> That version of you is judging you right now.",
+                "The ancient philosophers asked: <span class='highlight'>'What is the meaning of life?'</span> They never found the answer. But they also never had buttons this good.",
+                "If a website exists purely to waste time, and you visit it, <span class='highlight'>who is really wasting whose time?</span> (It's still you.)",
+                "<span class='highlight'>To click, or not to click.</span> That is the question. The answer is always click. You know this. I know this."
+            ];
+
+            showMessage(thoughts[Math.floor(Math.random() * thoughts.length)]);
+            addHistory('Received questionable philosophical wisdom');
+            spawnFloatingText('DEEP...', btn.getBoundingClientRect().x + 60, btn.getBoundingClientRect().y, '#dfe6e9');
+
+            if (!achievements.has('philosophy')) {
+                unlock('philosophy', 'ARMCHAIR PHILOSOPHER -- Sought wisdom from a button');
+            }
+        }
+    </script>
+</body>
+</html>
+
