@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dungeon of Doors</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #0a0a0a;
+    color: #e0d6c2;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  #game-container {
+    width: 800px;
+    max-width: 95vw;
+    text-align: center;
+    position: relative;
+  }
+  h1 {
+    font-size: 2.5rem;
+    color: #c9a84c;
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+    margin-bottom: 10px;
+    letter-spacing: 4px;
+  }
+  #floor-counter {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 5px;
+  }
+  #stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+  .stat-label { color: #777; }
+  .stat-value { color: #c9a84c; font-weight: bold; font-size: 1.1rem; }
+  #hp-val { color: #e74c3c; }
+  #gold-val { color: #f1c40f; }
+  #atk-val { color: #e67e22; }
+  #def-val { color: #3498db; }
+
+  #narrative {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 25px;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    line-height: 1.8;
+    font-size: 1.05rem;
+    position: relative;
+    overflow: hidden;
+  }
+  #narrative::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+  }
+  #scene-text {
+    max-width: 600px;
+  }
+  #combat-zone {
+    margin-top: 15px;
+    padding: 10px;
+    border-top: 1px solid #2a2a2a;
+    width: 100%;
+  }
+  .enemy-hp-bar-bg {
+    width: 60%;
+    margin: 8px auto;
+    background: #2a2a2a;
+    border-radius: 10px;
+    height: 16px;
+    overflow: hidden;
+  }
+  .enemy-hp-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #c0392b, #e74c3c);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+  .enemy-name {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 1.15rem;
+  }
+
+  #doors-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .door-btn {
+    background: linear-gradient(180deg, #1e1e1e 0%, #141414 100%);
+    border: 2px solid #333;
+    color: #c9a84c;
+    padding: 20px 15px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    width: 170px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .door-btn:hover {
+    border-color: #c9a84c;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(201,168,76,0.2);
+  }
+  .door-btn:active {
+    transform: translateY(0);
+  }
+  .door-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.08), transparent);
+    transition: left 0.5s;
+  }
+  .door-btn:hover::after {
+    left: 100%;
+  }
+  .door-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .door-hint {
+    font-size: 0.78rem;
+    color: #666;
+    display: block;
+  }
+
+  .door-red { border-color: #5c1a1a; }
+  .door-red:hover { border-color: #e74c3c; box-shadow: 0 8px 25px rgba(231,76,60,0.2); }
+  .door-red .door-title { color: #e74c3c; }
+
+  .door-green { border-color: #1a4a1a; }
+  .door-green:hover { border-color: #2ecc71; box-shadow: 0 8px 25px rgba(46,204,113,0.2); }
+  .door-green .door-title { color: #2ecc71; }
+
+  .door-blue { border-color: #1a1a5c; }
+  .door-blue:hover { border-color: #3498db; box-shadow: 0 8px 25px rgba(52,152,219,0.2); }
+  .door-blue .door-title { color: #3498db; }
+
+  .door-gold { border-color: #5c4a1a; }
+  .door-gold:hover { border-color: #f1c40f; box-shadow: 0 8px 25px rgba(241,196,15,0.2); }
+  .door-gold .door-title { color: #f1c40f; }
+
+  .door-purple { border-color: #3a1a5c; }
+  .door-purple:hover { border-color: #9b59b6; box-shadow: 0 8px 25px rgba(155,89,182,0.2); }
+  .door-purple .door-title { color: #9b59b6; }
+
+  #log {
+    margin-top: 20px;
+    background: #0d0d0d;
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    padding: 12px;
+    max-height: 120px;
+    overflow-y: auto;
+    text-align: left;
+    font-size: 0.8rem;
+    color: #555;
+  }
+  #log::-webkit-scrollbar { width: 5px; }
+  #log::-webkit-scrollbar-track { background: #0d0d0d; }
+  #log::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  .log-entry { margin-bottom: 3px; padding: 2px 5px; }
+  .log-good { color: #2ecc71; }
+  .log-bad { color: #e74c3c; }
+  .log-info { color: #888; }
+  .log-gold { color: #f1c40f; }
+  .log-special { color: #9b59b6; }
+
+  #game-over {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  #game-over.show { display: flex; }
+  #game-over h2 {
+    font-size: 3rem;
+    color: #e74c3c;
+    text-shadow: 0 0 30px rgba(231,76,60,0.5);
+    margin-bottom: 15px;
+  }
+  #game-over .victory h2 { color: #c9a84c; text-shadow: 0 0 30px rgba(201,168,76,0.6); }
+  #game-over p {
+    color: #888;
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    font-family: 'Courier New', monospace;
+  }
+  #restart-btn {
+    background: linear-gradient(180deg, #c9a84c, #a08030);
+    border: none;
+    color: #0a0a0a;
+    padding: 14px 40px;
+    font-size: 1.1rem;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  #restart-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 30px rgba(201,168,76,0.4);
+  }
+
+  .shake {
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  .flash-gold {
+    animation: flashGold 0.6s ease;
+  }
+  @keyframes flashGold {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 30px rgba(241,196,15,0.5); }
+  }
+  .flash-heal {
+    animation: flashHeal 0.6s ease;
+  }
+  @keyframes flashHeal {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 30px rgba(46,204,113,0.5); }
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.6rem; }
+    .door-btn { width: 140px; padding: 15px 10px; }
+    #narrative { padding: 20px; min-height: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <h1>DUNGEON OF DOORS</h1>
+  <div id="floor-counter">Floor 1</div>
+  <div id="stats-bar">
+    <div class="stat"><span class="stat-label">HP </span><span class="stat-value" id="hp-val">100/100</span></div>
+    <div class="stat"><span class="stat-label">ATK </span><span class="stat-value" id="atk-val">10</span></div>
+    <div class="stat"><span class="stat-label">DEF </span><span class="stat-value" id="def-val">5</span></div>
+    <div class="stat"><span class="stat-label">GOLD </span><span class="stat-value" id="gold-val">0</span></div>
+  </div>
+
+  <div id="narrative">
+    <div id="scene-text">
+      You descend into the dungeon. The stairwell crumbles behind you -- there is no going back.<br><br>
+      Before you stand three doors. Each hides a different fate. Choose wisely... or recklessly.
+    </div>
+    <div id="combat-zone" style="display:none;"></div>
+  </div>
+
+  <div id="doors-container"></div>
+
+  <div id="log"></div>
+</div>
+
+<div id="game-over">
+  <h2 id="go-title">YOU HAVE FALLEN</h2>
+  <p id="go-summary"></p>
+  <button id="restart-btn" onclick="startGame()">DESCEND AGAIN</button>
+</div>
+
+<script>
+const ENEMIES = [
+  { name: "Skeleton Soldier", hp: 20, atk: 6, def: 2, gold: [5,15], flavor: "Bones rattle in the darkness. A skeletal warrior raises a rusted blade." },
+  { name: "Giant Rat", hp: 12, atk: 4, def: 1, gold: [3,8], flavor: "A rat the size of a dog bares yellowed fangs and lunges." },
+  { name: "Goblin Thief", hp: 18, atk: 7, def: 2, gold: [10,25], flavor: "A cackling goblin flips a stolen dagger between its claws." },
+  { name: "Shadow Wraith", hp: 25, atk: 9, def: 3, gold: [8,18], flavor: "The air grows ice-cold. A dark figure materializes from nothing." },
+  { name: "Cave Troll", hp: 40, atk: 10, def: 5, gold: [15,35], flavor: "The ground shakes. A massive troll squeezes through the doorway." },
+  { name: "Venomous Spider", hp: 15, atk: 8, def: 1, gold: [5,12], flavor: "Webs coat the ceiling. Eight gleaming eyes descend toward you." },
+  { name: "Cursed Knight", hp: 35, atk: 11, def: 6, gold: [12,30], flavor: "An armored figure kneels in prayer, then rises with hollow eyes." },
+  { name: "Fungal Horror", hp: 28, atk: 7, def: 4, gold: [8,20], flavor: "A pulsing mass of mushroom and flesh shuffles toward you, spores filling the air." },
+  { name: "Bone Serpent", hp: 22, atk: 9, def: 2, gold: [10,22], flavor: "A snake made entirely of fused bones slithers across the stone floor." },
+  { name: "Mimic", hp: 30, atk: 12, def: 4, gold: [20,45], flavor: "The treasure chest sprouts teeth and legs. It was hungry all along." },
+];
+
+const BOSSES = [
+  { name: "The Warden", hp: 70, atk: 14, def: 7, gold: [40,60], flavor: "A towering figure in black iron armor blocks the passage. 'None leave my domain.'" },
+  { name: "The Devourer", hp: 85, atk: 16, def: 5, gold: [50,70], flavor: "A maw of impossible size opens in the floor. Tentacles rise from the abyss." },
+  { name: "The Lich King", hp: 60, atk: 18, def: 8, gold: [60,80], flavor: "Green flames erupt. A crowned skeleton floats above a throne of skulls." },
+];
+
+const TREASURES = [
+  { text: "You find a chest of gold coins!", goldMin: 10, goldMax: 30 },
+  { text: "A pile of ancient coins glimmers in torchlight.", goldMin: 8, goldMax: 20 },
+  { text: "A merchant's lost satchel -- still full of riches.", goldMin: 15, goldMax: 40 },
+  { text: "Gems embedded in the wall. You pry them loose.", goldMin: 12, goldMax: 35 },
+  { text: "A golden goblet sits on a dusty altar.", goldMin: 10, goldMax: 25 },
+];
+
+const HEAL_EVENTS = [
+  { text: "A glowing spring bubbles from the stone. You drink deeply.", healMin: 15, healMax: 35 },
+  { text: "A forgotten shrine radiates warmth. Your wounds begin to close.", healMin: 20, healMax: 40 },
+  { text: "You find dried rations wrapped in enchanted cloth -- still fresh.", healMin: 10, healMax: 25 },
+  { text: "A kind spirit passes through you, mending flesh and bone.", healMin: 25, healMax: 50 },
+];
+
+const SHOP_ITEMS = [
+  { name: "Iron Sword", desc: "+3 ATK", cost: 20, effect: () => { player.atk += 3; } },
+  { name: "Steel Shield", desc: "+3 DEF", cost: 20, effect: () => { player.def += 3; } },
+  { name: "Health Potion", desc: "+30 HP", cost: 15, effect: () => { player.hp = Math.min(player.maxHp, player.hp + 30); } },
+  { name: "Battle Axe", desc: "+5 ATK", cost: 35, effect: () => { player.atk += 5; } },
+  { name: "Plate Armor", desc: "+5 DEF", cost: 35, effect: () => { player.def += 5; } },
+  { name: "Elixir of Life", desc: "+25 Max HP and full heal", cost: 50, effect: () => { player.maxHp += 25; player.hp = player.maxHp; } },
+  { name: "Whetstone", desc: "+2 ATK", cost: 10, effect: () => { player.atk += 2; } },
+  { name: "Leather Padding", desc: "+2 DEF", cost: 10, effect: () => { player.def += 2; } },
+];
+
+const TRAP_EVENTS = [
+  { text: "The floor collapses! You fall into a spike pit.", dmgMin: 8, dmgMax: 20 },
+  { text: "A dart shoots from the wall and strikes your arm.", dmgMin: 5, dmgMax: 15 },
+  { text: "Poison gas fills the chamber. You stumble through, gasping.", dmgMin: 10, dmgMax: 25 },
+  { text: "A swinging blade catches your side as you step through.", dmgMin: 7, dmgMax: 18 },
+];
+
+const MYSTERY_EVENTS = [
+  function() {
+    let boost = rand(1,4);
+    player.atk += boost;
+    player.def += boost;
+    updateStats();
+    setNarrative("A spectral blacksmith appears and tempers your gear in ghostly flame.<br><br>ATK +" + boost + ", DEF +" + boost);
+    addLog("Mysterious forge: ATK +" + boost + ", DEF +" + boost, "special");
+    showContinue();
+  },
+  function() {
+    let amt = rand(5, 20);
+    player.hp = Math.max(1, player.hp - amt);
+    let boost = rand(3,7);
+    player.atk += boost;
+    updateStats();
+    setNarrative("You find a cursed blade embedded in stone. Pulling it free costs blood but grants terrible power.<br><br>Lost " + amt + " HP, gained +" + boost + " ATK");
+    addLog("Cursed blade: -" + amt + " HP, +" + boost + " ATK", "special");
+    showContinue();
+  },
+  function() {
+    let g = rand(15, 40);
+    let h = rand(10, 30);
+    player.gold += g;
+    player.hp = Math.min(player.maxHp, player.hp + h);
+    updateStats();
+    setNarrative("An old adventurer's campsite, long abandoned. You scavenge supplies and rest briefly.<br><br>+" + g + " gold, +" + h + " HP");
+    addLog("Abandoned camp: +" + g + " gold, +" + h + " HP", "special");
+    showContinue();
+  },
+  function() {
+    player.maxHp += 15;
+    player.hp = Math.min(player.maxHp, player.hp + 15);
+    updateStats();
+    setNarrative("A crystalline pool reflects no image. You drink from it and feel your vitality surge.<br><br>Max HP +15");
+    addLog("Crystal pool: Max HP +15", "special");
+    showContinue();
+  },
+  function() {
+    // gamble
+    let coin = Math.random() < 0.5;
+    if (coin) {
+      let g = rand(20, 50);
+      player.gold += g;
+      updateStats();
+      setNarrative("A grinning phantom offers a wager: 'Heads or tails?'<br><br>You win! +" + g + " gold!");
+      addLog("Phantom gamble: WON +" + g + " gold", "gold");
+    } else {
+      let loss = Math.min(player.gold, rand(10, 30));
+      player.gold -= loss;
+      updateStats();
+      setNarrative("A grinning phantom offers a wager: 'Heads or tails?'<br><br>You lose. -" + loss + " gold.");
+      addLog("Phantom gamble: LOST " + loss + " gold", "bad");
+    }
+    showContinue();
+  },
+];
+
+let player, floor, inCombat, currentEnemy, gameActive;
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function startGame() {
+  player = { hp: 100, maxHp: 100, atk: 10, def: 5, gold: 0 };
+  floor = 0;
+  inCombat = false;
+  currentEnemy = null;
+  gameActive = true;
+  document.getElementById('game-over').classList.remove('show');
+  document.getElementById('log').innerHTML = '';
+  addLog("You enter the Dungeon of Doors...", "info");
+  updateStats();
+  nextFloor();
+}
+
+function updateStats() {
+  document.getElementById('hp-val').textContent = player.hp + "/" + player.maxHp;
+  document.getElementById('atk-val').textContent = player.atk;
+  document.getElementById('def-val').textContent = player.def;
+  document.getElementById('gold-val').textContent = player.gold;
+  document.getElementById('floor-counter').textContent = "Floor " + floor;
+}
+
+function setNarrative(html) {
+  document.getElementById('scene-text').innerHTML = html;
+  document.getElementById('combat-zone').style.display = 'none';
+}
+
+function setDoors(doors) {
+  let container = document.getElementById('doors-container');
+  container.innerHTML = '';
+  doors.forEach(d => {
+    let btn = document.createElement('button');
+    btn.className = 'door-btn ' + (d.colorClass || '');
+    btn.innerHTML = '<span class="door-title">' + d.title + '</span><span class="door-hint">' + d.hint + '</span>';
+    btn.onclick = d.action;
+    container.appendChild(btn);
+  });
+}
+
+function addLog(text, type) {
+  let log = document.getElementById('log');
+  let entry = document.createElement('div');
+  entry.className = 'log-entry log-' + (type || 'info');
+  entry.textContent = "[F" + floor + "] " + text;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function showContinue() {
+  setDoors([{
+    title: "Continue",
+    hint: "descend deeper",
+    colorClass: "door-gold",
+    action: nextFloor
+  }]);
+}
+
+function nextFloor() {
+  if (!gameActive) return;
+  floor++;
+  updateStats();
+
+  // Boss every 10 floors
+  if (floor % 10 === 0) {
+    startBossFight();
+    return;
+  }
+
+  // Victory at floor 30
+  if (floor > 30) {
+    victory();
+    return;
+  }
+
+  generateDoors();
+}
+
+function generateDoors() {
+  let doorTypes = ['combat', 'treasure', 'heal', 'shop', 'trap', 'mystery'];
+  let selected = [];
+  
+  // Always offer 3 doors with some variety
+  let pool = [...doorTypes];
+  while (selected.length < 3) {
+    let pick_idx = Math.floor(Math.random() * pool.length);
+    let type = pool[pick_idx];
+    // Don't repeat types
+    if (!selected.includes(type)) {
+      selected.push(type);
+    }
+    pool.splice(pick_idx, 1);
+    if (pool.length === 0) pool = [...doorTypes];
+  }
+
+  let doors = selected.map(type => buildDoor(type));
+
+  setNarrative("The corridor splits. Three doors stand before you, each marked with a strange symbol.<br><br>Choose your path.");
+  setDoors(doors);
+}
+
+function buildDoor(type) {
+  switch(type) {
+    case 'combat':
+      return {
+        title: "Skull Door",
+        hint: "danger and reward await",
+        colorClass: "door-red",
+        action: () => startCombat(false)
+      };
+    case 'treasure':
+      return {
+        title: "Gilded Door",
+        hint: "the gleam of riches",
+        colorClass: "door-gold",
+        action: treasureRoom
+      };
+    case 'heal':
+      return {
+        title: "Verdant Door",
+        hint: "a soothing presence",
+        colorClass: "door-green",
+        action: healRoom
+      };
+    case 'shop':
+      return {
+        title: "Merchant Door",
+        hint: "trade and barter",
+        colorClass: "door-blue",
+        action: shopRoom
+      };
+    case 'trap':
+      return {
+        title: "Cracked Door",
+        hint: "something feels wrong",
+        colorClass: "door-red",
+        action: trapRoom
+      };
+    case 'mystery':
+      return {
+        title: "Strange Door",
+        hint: "the unknown beckons",
+        colorClass: "door-purple",
+        action: mysteryRoom
+      };
+  }
+}
+
+function scaleEnemy(enemy) {
+  let scale = 1 + (floor - 1) * 0.12;
+  return {
+    name: enemy.name,
+    hp: Math.floor(enemy.hp * scale),
+    maxHp: Math.floor(enemy.hp * scale),
+    atk: Math.floor(enemy.atk * scale),
+    def: Math.floor(enemy.def * scale),
+    gold: [Math.floor(enemy.gold[0] * scale), Math.floor(enemy.gold[1] * scale)],
+    flavor: enemy.flavor
+  };
+}
+
+function startCombat(isBoss) {
+  inCombat = true;
+  let template;
+  if (isBoss) {
+    template = pick(BOSSES);
+  } else {
+    template = pick(ENEMIES);
+  }
+  currentEnemy = scaleEnemy(template);
+  if (isBoss) {
+    currentEnemy.hp = Math.floor(currentEnemy.hp * 1.5);
+    currentEnemy.maxHp = currentEnemy.hp;
+  }
+
+  renderCombat(currentEnemy.flavor);
+}
+
+function startBossFight() {
+  addLog("A BOSS bars the way!", "bad");
+  startCombat(true);
+}
+
+function renderCombat(message) {
+  let pct = Math.max(0, (currentEnemy.hp / currentEnemy.maxHp) * 100);
+  document.getElementById('scene-text').innerHTML = message || '';
+  let cz = document.getElementById('combat-zone');
+  cz.style.display = 'block';
+  cz.innerHTML = `
+    <div class="enemy-name">${currentEnemy.name}</div>
+    <div style="color:#999;font-size:0.85rem;">HP: ${currentEnemy.hp}/${currentEnemy.maxHp} | ATK: ${currentEnemy.atk} | DEF: ${currentEnemy.def}</div>
+    <div class="enemy-hp-bar-bg">
+      <div class="enemy-hp-bar" style="width:${pct}%"></div>
+    </div>
+  `;
+
+  setDoors([
+    {
+      title: "Attack",
+      hint: "strike with your weapon",
+      colorClass: "door-red",
+      action: combatAttack
+    },
+    {
+      title: "Defend",
+      hint: "brace for impact, then strike",
+      colorClass: "door-blue",
+      action: combatDefend
+    },
+    {
+      title: "Gambit",
+      hint: "risky double damage",
+      colorClass: "door-purple",
+      action: combatGambit
+    }
+  ]);
+}
+
+function combatAttack() {
+  if (!inCombat) return;
+  let dmgToEnemy = Math.max(1, player.atk - currentEnemy.def + rand(-2, 3));
+  currentEnemy.hp -= dmgToEnemy;
+  let msg = "You strike the " + currentEnemy.name + " for " + dmgToEnemy + " damage!";
+  addLog("Hit " + currentEnemy.name + " for " + dmgToEnemy, "info");
+
+  if (currentEnemy.hp <= 0) {
+    combatVictory();
+    return;
+  }
+
+  let dmgToPlayer = Math.max(0, currentEnemy.atk - player.def + rand(-2, 3));
+  player.hp -= dmgToPlayer;
+  msg += "<br>The " + currentEnemy.name + " strikes back for " + dmgToPlayer + " damage!";
+  addLog(currentEnemy.name + " hits you for " + dmgToPlayer, "bad");
+
+  document.getElementById('narrative').classList.add('shake');
+  setTimeout(() => document.getElementById('narrative').classList.remove('shake'), 400);
+
+  updateStats();
+  if (player.hp <= 0) {
+    gameOver();
+    return;
+  }
+  renderCombat(msg);
+}
+
+function combatDefend() {
+  if (!inCombat) return;
+  let tempDef = player.def * 2;
+  let dmgToPlayer = Math.max(0, currentEnemy.atk - tempDef + rand(-2, 3));
+  player.hp -= dmgToPlayer;
+  let msg = "You brace yourself! The " + currentEnemy.name + " deals only " + dmgToPlayer + " damage.";
+
+  let counterDmg = Math.max(1, Math.floor(player.atk * 0.7) - currentEnemy.def + rand(-1, 2));
+  currentEnemy.hp -= counterDmg;
+ msg += "<br>You counter for " + counterDmg + " damage!";
+  addLog("Defended! Took " + dmgToPlayer + ", countered for " + counterDmg, "info");
+
+  updateStats();
+  if (currentEnemy.hp <= 0) {
+    combatVictory();
+    return;
+  }
+  if (player.hp <= 0) {
+    gameOver();
+    return;
+  }
+  renderCombat(msg);
+}
+
+function combatGambit() {
+  if (!inCombat) return;
+  let lucky = Math.random() < 0.55;
+  let msg;
+  if (lucky) {
+    let dmg = Math.max(1, (player.atk * 2) - currentEnemy.def + rand(0, 5));
+    currentEnemy.hp -= dmg;
+    msg = "Your reckless gambit pays off! You deal a devastating " + dmg + " damage!";
+    addLog("Gambit SUCCESS: " + dmg + " damage!", "good");
+
+    if (currentEnemy.hp <= 0) {
+      combatVictory();
+      return;
+    }
+
+    let dmgToPlayer = Math.max(0, currentEnemy.atk - player.def + rand(-2, 3));
+    player.hp -= dmgToPlayer;
+    msg += "<br>The " + currentEnemy.name + " retaliates for " + dmgToPlayer + ".";
+    addLog(currentEnemy.name + " retaliates for " + dmgToPlayer, "bad");
+  } else {
+    msg = "Your gambit fails! You stumble and leave yourself wide open.";
+    let dmg = Math.max(1, Math.floor(currentEnemy.atk * 1.5) - Math.floor(player.def * 0.5) + rand(0, 4));
+    player.hp -= dmg;
+    msg += "<br>The " + currentEnemy.name + " punishes you for " + dmg + " damage!";
+    addLog("Gambit FAILED: took " + dmg + " damage!", "bad");
+
+    document.getElementById('narrative').classList.add('shake');
+    setTimeout(() => document.getElementById('narrative').classList.remove('shake'), 400);
+  }
+
+  updateStats();
+  if (player.hp <= 0) {
+    gameOver();
+    return;
+  }
+  renderCombat(msg);
+}
+
+function combatVictory() {
+  inCombat = false;
+  let goldEarned = rand(currentEnemy.gold[0], currentEnemy.gold[1]);
+  player.gold += goldEarned;
+
+  let bonusHeal = rand(3, 10);
+  player.hp = Math.min(player.maxHp, player.hp + bonusHeal);
+
+  updateStats();
+
+  document.getElementById('combat-zone').style.display = 'none';
+  setNarrative("The " + currentEnemy.name + " crumbles to dust!<br><br>You collect <span style='color:#f1c40f'>" + goldEarned + " gold</span> and catch your breath. <span style='color:#2ecc71'>+" + bonusHeal + " HP</span>");
+  addLog("Defeated " + currentEnemy.name + "! +" + goldEarned + " gold, +" + bonusHeal + " HP", "good");
+
+  document.getElementById('narrative').classList.add('flash-gold');
+  setTimeout(() => document.getElementById('narrative').classList.remove('flash-gold'), 600);
+
+  showContinue();
+}
+
+function treasureRoom() {
+  let t = pick(TREASURES);
+  let g = rand(t.goldMin, t.goldMax);
+  // Scale gold with floor
+  g = Math.floor(g * (1 + floor * 0.05));
+  player.gold += g;
+  updateStats();
+  setNarrative(t.text + "<br><br><span style='color:#f1c40f'>+" + g + " gold!</span>");
+  addLog("Found treasure: +" + g + " gold", "gold");
+
+  document.getElementById('narrative').classList.add('flash-gold');
+  setTimeout(() => document.getElementById('narrative').classList.remove('flash-gold'), 600);
+
+  // Small chance of ambush
+  if (Math.random() < 0.25) {
+    setDoors([{
+      title: "Grab and Go",
+      hint: "something stirs behind you...",
+      colorClass: "door-red",
+      action: () => {
+        addLog("Ambush after treasure!", "bad");
+        startCombat(false);
+      }
+    }]);
+  } else {
+    showContinue();
+  }
+}
+
+function healRoom() {
+  let h = pick(HEAL_EVENTS);
+  let amt = rand(h.healMin, h.healMax);
+  let before = player.hp;
+  player.hp = Math.min(player.maxHp, player.hp + amt);
+  let actual = player.hp - before;
+  updateStats();
+  setNarrative(h.text + "<br><br><span style='color:#2ecc71'>+" + actual + " HP restored.</span>");
+  addLog("Healed +" + actual + " HP", "good");
+
+  document.getElementById('narrative').classList.add('flash-heal');
+  setTimeout(() => document.getElementById('narrative').classList.remove('flash-heal'), 600);
+
+  showContinue();
+}
+
+function shopRoom() {
+  let available = [];
+  let pool = [...SHOP_ITEMS];
+  for (let i = 0; i < 3 && pool.length > 0; i++) {
+    let idx = Math.floor(Math.random() * pool.length);
+    available.push(pool[idx]);
+    pool.splice(idx, 1);
+  }
+
+  setNarrative("A hooded merchant sits cross-legged in the chamber, wares spread on a tattered blanket.<br><br><span style='color:#888'>\"Take a look, friend. Fair prices for a place like this.\"</span>");
+
+  let doors = available.map(item => {
+    let scaledCost = Math.floor(item.cost * (1 + floor * 0.03));
+    return {
+      title: item.name,
+      hint: item.desc + " -- " + scaledCost + " gold",
+      colorClass: "door-blue",
+      action: () => buyItem(item, scaledCost, available)
+    };
+  });
+
+  doors.push({
+    title: "Leave Shop",
+    hint: "continue onward",
+    colorClass: "door-gold",
+    action: nextFloor
+  });
+
+  setDoors(doors);
+}
+
+function buyItem(item, cost, shopItems) {
+  if (player.gold < cost) {
+    addLog("Not enough gold for " + item.name + "!", "bad");
+    setNarrative("The merchant shakes his head. <span style='color:#e74c3c'>\"Not enough coin, friend.\"</span>");
+    // Re-render shop
+    setTimeout(() => shopRoom(), 1200);
+    return;
+  }
+
+  player.gold -= cost;
+  item.effect();
+  updateStats();
+  addLog("Bought " + item.name + " for " + cost + " gold", "gold");
+
+  setNarrative("The merchant nods approvingly as you take the <span style='color:#3498db'>" + item.name + "</span>.<br><br><span style='color:#888'>\"Pleasure doing business.\"</span>");
+
+  document.getElementById('narrative').classList.add('flash-gold');
+  setTimeout(() => document.getElementById('narrative').classList.remove('flash-gold'), 600);
+
+  // Remove purchased item and re-show shop
+  let remaining = shopItems.filter(i => i !== item);
+  if (remaining.length === 0) {
+    setNarrative("The merchant folds up his blanket. <span style='color:#888'>\"That is all I have. Safe travels.\"</span>");
+    showContinue();
+    return;
+  }
+
+  let doors = remaining.map(si => {
+    let scaledCost = Math.floor(si.cost * (1 + floor * 0.03));
+    return {
+      title: si.name,
+      hint: si.desc + " -- " + scaledCost + " gold",
+      colorClass: "door-blue",
+      action: () => buyItem(si, scaledCost, remaining)
+    };
+  });
+  doors.push({
+    title: "Leave Shop",
+    hint: "continue onward",
+    colorClass: "door-gold",
+    action: nextFloor
+  });
+  setDoors(doors);
+}
+
+function trapRoom() {
+  let t = pick(TRAP_EVENTS);
+  let dmg = rand(t.dmgMin, t.dmgMax);
+  dmg = Math.floor(dmg * (1 + floor * 0.04));
+  let reduced = Math.max(1, dmg - Math.floor(player.def * 0.5));
+  player.hp -= reduced;
+  updateStats();
+
+  document.getElementById('narrative').classList.add('shake');
+  setTimeout(() => document.getElementById('narrative').classList.remove('shake'), 400);
+
+  if (player.hp <= 0) {
+    setNarrative(t.text + "<br><br><span style='color:#e74c3c'>The trap proved fatal. You collapse.</span>");
+    addLog("Killed by a trap! -" + reduced + " HP", "bad");
+    setTimeout(gameOver, 1500);
+    setDoors([]);
+    return;
+  }
+
+  // Traps sometimes have consolation loot
+  let consolation = "";
+  if (Math.random() < 0.4) {
+    let g = rand(5, 15);
+    player.gold += g;
+    consolation = "<br>At least you found <span style='color:#f1c40f'>" + g + " gold</span> among the debris.";
+    addLog("Trap! -" + reduced + " HP, but found " + g + " gold", "bad");
+  } else {
+    addLog("Trap! -" + reduced + " HP", "bad");
+  }
+
+  updateStats();
+  setNarrative(t.text + "<br><br><span style='color:#e74c3c'>-" + reduced + " HP</span>" + consolation);
+  showContinue();
+}
+
+function mysteryRoom() {
+  let event = pick(MYSTERY_EVENTS);
+  event();
+}
+
+function gameOver() {
+  gameActive = false;
+  inCombat = false;
+  let overlay = document.getElementById('game-over');
+  document.getElementById('go-title').textContent = "YOU HAVE FALLEN";
+  document.getElementById('go-title').style.color = "#e74c3c";
+  document.getElementById('go-title').style.textShadow = "0 0 30px rgba(231,76,60,0.5)";
+  document.getElementById('go-summary').textContent = "Reached Floor " + floor + " with " + player.gold + " gold. Your bones join the dungeon's collection.";
+  overlay.classList.add('show');
+}
+
+function victory() {
+  gameActive = false;
+  let overlay = document.getElementById('game-over');
+  document.getElementById('go-title').textContent = "YOU ESCAPED";
+  document.getElementById('go-title').style.color = "#c9a84c";
+  document.getElementById('go-title').style.textShadow = "0 0 30px rgba(201,168,76,0.6)";
+  document.getElementById('go-summary').textContent = "You conquered all 30 floors with " + player.gold + " gold, " + player.atk + " ATK, and " + player.def + " DEF. The sunlight has never felt so warm.";
+  overlay.classList.add('show');
+}
+
+// Start the game
+startGame();
+</script>
+</body>
+</html>
+

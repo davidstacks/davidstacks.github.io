@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potion Brewing Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes bubbleFloat {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-30px) scale(1.2); opacity: 0.5; }
+            100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+        }
+
+        @keyframes cauldronGlow {
+            0% { box-shadow: 0 0 20px var(--glow-color, #6b1d9e), inset 0 -30px 40px var(--glow-color, #6b1d9e); }
+            50% { box-shadow: 0 0 50px var(--glow-color, #6b1d9e), inset 0 -40px 60px var(--glow-color, #6b1d9e); }
+            100% { box-shadow: 0 0 20px var(--glow-color, #6b1d9e), inset 0 -30px 40px var(--glow-color, #6b1d9e); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
+            33% { transform: translateY(-40px) translateX(15px) scale(1.5); opacity: 0.4; }
+            66% { transform: translateY(-80px) translateX(-10px) scale(2); opacity: 0.2; }
+            100% { transform: translateY(-120px) translateX(5px) scale(2.5); opacity: 0; }
+        }
+
+        @keyframes shelfFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes explosion {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(3); opacity: 0.8; }
+            100% { transform: scale(5); opacity: 0; }
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1) rotate(180deg); }
+        }
+
+        @keyframes liquidSlosh {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 30%, #0d1b2a 100%);
+            min-height: 100vh;
+            color: #e0d5c1;
+            overflow-x: hidden;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: sparkle 3s infinite;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, #9b59b6, #e74c3c, #f39c12, #9b59b6);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+            text-shadow: none;
+            letter-spacing: 3px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #8b7db8;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        .lab-container {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            gap: 25px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .ingredient-shelf {
+            flex: 1;
+            min-width: 280px;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 2px solid #2a1a4e;
+            border-radius: 15px;
+            padding: 20px;
+            animation: shelfFloat 6s ease-in-out infinite;
+        }
+
+        .ingredient-shelf h2 {
+            text-align: center;
+            color: #c9a0dc;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #3a2a5e;
+            padding-bottom: 10px;
+        }
+
+        .ingredient-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .ingredient {
+            background: linear-gradient(135deg, #2a1a4e, #1a2a4e);
+            border: 1px solid #3a2a6e;
+            border-radius: 10px;
+            padding: 12px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .ingredient:hover {
+            transform: translateY(-3px);
+            border-color: #6a4a9e;
+            box-shadow: 0 5px 20px rgba(107, 29, 158, 0.3);
+        }
+
+        .ingredient:active {
+            transform: scale(0.95);
+        }
+
+        .ingredient-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 5px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ingredient-icon .flask {
+            width: 30px;
+            height: 35px;
+            position: relative;
+        }
+
+        .ingredient-name {
+            font-size: 0.85rem;
+            color: #b8a9d4;
+        }
+
+        .ingredient-desc {
+            font-size: 0.7rem;
+            color: #7a6b9e;
+            margin-top: 3px;
+        }
+
+        .cauldron-area {
+            flex: 1.2;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .cauldron-wrapper {
+            position: relative;
+            width: 280px;
+            height: 250px;
+            margin-bottom: 15px;
+        }
+
+        .cauldron {
+            width: 280px;
+            height: 200px;
+            background: radial-gradient(ellipse at center bottom, #2a2a3a 0%, #1a1a2a 60%, #111 100%);
+            border-radius: 0 0 50% 50%;
+            position: absolute;
+            bottom: 0;
+            border: 3px solid #3a3a4a;
+            animation: cauldronGlow 3s ease-in-out infinite;
+            overflow: hidden;
+        }
+
+        .cauldron-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 5%;
+            width: 90%;
+            height: 60%;
+            border-radius: 0 0 50% 50%;
+            transition: background-color 1s ease, height 0.5s ease;
+            animation: liquidSlosh 2s ease-in-out infinite;
+        }
+
+        .cauldron-rim {
+            position: absolute;
+            top: -8px;
+            left: -10px;
+            right: -10px;
+            height: 20px;
+            background: linear-gradient(180deg, #4a4a5a, #2a2a3a);
+            border-radius: 10px;
+            border: 2px solid #5a5a6a;
+        }
+
+        .bubble-container {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            animation: bubbleFloat 2s ease-in infinite;
+            opacity: 0.6;
+        }
+
+        .smoke-container {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 120px;
+            pointer-events: none;
+        }
+
+        .smoke {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            animation: smokeRise 3s ease-out infinite;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Georgia', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-brew {
+            background: linear-gradient(135deg, #6b1d9e, #9b30ff);
+            color: white;
+            font-size: 1.2rem;
+            padding: 14px 36px;
+        }
+
+        .btn-brew:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(155, 48, 255, 0.5);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #8b0000, #c0392b);
+            color: white;
+        }
+
+        .btn-clear:hover {
+            box-shadow: 0 5px 15px rgba(192, 57, 43, 0.4);
+        }
+
+        .btn-random {
+            background: linear-gradient(135deg, #1a6b3e, #27ae60);
+            color: white;
+        }
+
+        .btn-random:hover {
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .current-ingredients {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 2px solid #2a1a4e;
+            border-radius: 12px;
+            padding: 15px;
+            width: 100%;
+            max-width: 350px;
+            min-height: 60px;
+            margin-bottom: 10px;
+        }
+
+        .current-ingredients h3 {
+            color: #c9a0dc;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .ingredient-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .ingredient-tag {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            border: 1px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ingredient-tag:hover {
+            opacity: 0.6;
+        }
+
+        .result-panel {
+            flex: 1;
+            min-width: 280px;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 2px solid #2a1a4e;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .result-panel h2 {
+            text-align: center;
+            color: #c9a0dc;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #3a2a5e;
+            padding-bottom: 10px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #2a1a4e, #1a2a4e);
+            border: 1px solid #3a2a6e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        .result-card.success {
+            border-color: #f39c12;
+            animation: successPulse 1s ease-in-out 3;
+        }
+
+        .result-card.failure {
+            border-color: #c0392b;
+        }
+
+        .potion-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .potion-desc {
+            font-size: 0.9rem;
+            color: #8b7db8;
+            line-height: 1.5;
+        }
+
+        .potion-effect {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .recipe-book {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 2px solid #2a1a4e;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .recipe-book h3 {
+            color: #c9a0dc;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .recipe-entry {
+            padding: 8px;
+            border-bottom: 1px solid #2a1a4e;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recipe-entry:last-child {
+            border-bottom: none;
+        }
+
+        .discovered {
+            color: #f39c12;
+        }
+
+        .undiscovered {
+            color: #4a4a5a;
+            font-style: italic;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #7a6b9e;
+        }
+
+        .explosion-effect {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            border-radius: 50%;
+            animation: explosion 1s ease-out forwards;
+        }
+
+        .sparkle-effect {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            width: 10px;
+            height: 10px;
+            animation: sparkle 0.8s ease-out forwards;
+        }
+
+        .sparkle-effect::before, .sparkle-effect::after {
+            content: '';
+            position: absolute;
+            background: #f39c12;
+        }
+
+        .sparkle-effect::before {
+            width: 2px;
+            height: 10px;
+            left: 4px;
+            top: 0;
+        }
+
+        .sparkle-effect::after {
+            width: 10px;
+            height: 2px;
+            left: 0;
+            top: 4px;
+        }
+
+        .fire-container {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .flame {
+            width: 15px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation-duration: 0.3s;
+            animation-iteration-count: infinite;
+            animation-direction: alternate;
+        }
+
+        @keyframes flicker1 {
+            0% { height: 25px; opacity: 1; }
+            100% { height: 35px; opacity: 0.8; }
+        }
+        @keyframes flicker2 {
+            0% { height: 20px; opacity: 0.9; }
+            100% { height: 30px; opacity: 0.7; }
+        }
+
+        .hint-box {
+            background: rgba(107, 29, 158, 0.1);
+            border: 1px dashed #6b1d9e;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #8b7db8;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6b1d9e, #f39c12);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .title-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            .lab-container { flex-direction: column; align-items: center; }
+            .ingredient-shelf, .cauldron-area, .result-panel { min-width: unset; width: 100%; }
+            .cauldron-wrapper { width: 220px; height: 200px; }
+            .cauldron { width: 220px; height: 160px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<header>
+    <h1>The Potion Brewing Lab</h1>
+    <p>Combine mystical ingredients to discover legendary potions</p>
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-value" id="discoveredCount">0</div>
+            <div class="stat-label">Discovered</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="totalRecipes">0</div>
+            <div class="stat-label">Total Recipes</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="brewCount">0</div>
+            <div class="stat-label">Brews</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="titleDisplay">Novice</div>
+            <div class="stat-label">Rank</div>
+        </div>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+</header>
+
+<div class="lab-container">
+    <div class="ingredient-shelf">
+        <h2>~ Ingredient Shelf ~</h2>
+        <div class="ingredient-grid" id="ingredientGrid"></div>
+        <div class="hint-box" id="hintBox">
+            Click ingredients to add them to your cauldron. Try different combinations!
+        </div>
+    </div>
+
+    <div class="cauldron-area">
+        <div class="cauldron-wrapper">
+            <div class="smoke-container" id="smokeContainer"></div>
+            <div class="cauldron" id="cauldron">
+                <div class="cauldron-rim"></div>
+                <div class="cauldron-liquid" id="cauldronLiquid"></div>
+                <div class="bubble-container" id="bubbleContainer"></div>
+            </div>
+            <div class="fire-container" id="fireContainer"></div>
+        </div>
+
+        <div class="current-ingredients" id="currentIngredients">
+            <h3>Cauldron Contents</h3>
+            <div class="ingredient-tags" id="ingredientTags">
+                <span style="color: #4a4a5a; font-style: italic; font-size: 0.85rem;">Empty - add ingredients!</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-brew" id="brewBtn" onclick="brewPotion()">Brew Potion</button>
+            <button class="btn btn-clear" onclick="clearCauldron()">Clear</button>
+            <button class="btn btn-random" onclick="randomBrew()">Lucky Brew</button>
+        </div>
+    </div>
+
+    <div class="result-panel">
+        <h2>~ Brewing Results ~</h2>
+        <div id="resultArea">
+            <div class="result-card">
+                <div class="potion-name" style="color: #4a4a5a;">Awaiting your first brew...</div>
+                <div class="potion-desc">Combine ingredients and press Brew to see what you create!</div>
+            </div>
+        </div>
+
+        <div class="recipe-book">
+            <h3 onclick="toggleRecipeBook()">-- Recipe Book (click to expand) --</h3>
+            <div id="recipeList" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ingredients = [
+        { id: 'moonwater', name: 'Moon Water', color: '#a8d8ea', desc: 'Collected at midnight', category: 'liquid' },
+        { id: 'dragonscale', name: 'Dragon Scale', color: '#e74c3c', desc: 'Still warm to touch', category: 'solid' },
+        { id: 'starbloom', name: 'Star Bloom', color: '#f1c40f', desc: 'Glows faintly', category: 'plant' },
+        { id: 'shadowdust', name: 'Shadow Dust', color: '#5a5a7a', desc: 'Absorbs light', category: 'powder' },
+        { id: 'phoenix_ash', name: 'Phoenix Ash', color: '#e67e22', desc: 'Eternally smoldering', category: 'powder' },
+        { id: 'crystaltear', name: 'Crystal Tear', color: '#3498db', desc: 'From a frozen cave', category: 'liquid' },
+        { id: 'nightshade', name: 'Nightshade', color: '#8e44ad', desc: 'Handle with care', category: 'plant' },
+        { id: 'thundermoss', name: 'Thunder Moss', color: '#2ecc71', desc: 'Crackles with static', category: 'plant' },
+        { id: 'ironblood', name: 'Iron Blood', color: '#95a5a6', desc: 'From the deep mines', category: 'liquid' },
+        { id: 'sunstone', name: 'Sun Stone', color: '#f39c12', desc: 'Radiates warmth', category: 'solid' },
+        { id: 'voidessence', name: 'Void Essence', color: '#2c0540', desc: 'From between worlds', category: 'liquid' },
+        { id: 'windfeather', name: 'Wind Feather', color: '#dfe6e9', desc: 'Never stays still', category: 'solid' }
+    ];
+
+    const recipes = [
+        {
+            ingredients: ['moonwater', 'starbloom'],
+            name: 'Elixir of Starlight',
+            color: '#f1e3b3',
+            desc: 'A shimmering golden liquid that illuminates the darkness.',
+            effect: 'Grants the ability to see in complete darkness for one hour.',
+            rarity: 'Common'
+        },
+        {
+            ingredients: ['dragonscale', 'phoenix_ash'],
+            name: 'Inferno Draught',
+            color: '#ff4500',
+            desc: 'An intensely hot potion that seems to boil even when cool.',
+            effect: 'Bestows fire immunity and the power to breathe flames.',
+            rarity: 'Rare'
+        },
+        {
+            ingredients: ['shadowdust', 'nightshade'],
+            name: 'Cloak of Shadows',
+            color: '#2c003e',
+            desc: 'A pitch-black liquid that seems to swallow light around it.',
+            effect: 'Renders the drinker completely invisible for thirty minutes.',
+            rarity: 'Rare'
+        },
+        {
+            ingredients: ['crystaltear', 'moonwater'],
+            name: 'Frost Veil Tonic',
+            color: '#a0d2db',
+            desc: 'Ice crystals form on the bottle surface.',
+            effect: 'Creates an impenetrable shield of ice around the user.',
+            rarity: 'Common'
+        },
+        {
+            ingredients: ['thundermoss', 'ironblood'],
+            name: 'Storm Conductor',
+            color: '#4a9e4a',
+            desc: 'Tiny lightning bolts arc across the liquid surface.',
+            effect: 'Allows control of lightning and electrical storms.',
+            rarity: 'Rare'
+        },
+        {
+            ingredients: ['sunstone', 'phoenix_ash'],
+            name: 'Solar Rebirth Serum',
+            color: '#ffb347',
+            desc: 'Glows like a captured sunrise within the vial.',
+            effect: 'Heals all wounds and restores full vitality instantly.',
+            rarity: 'Epic'
+        },
+        {
+            ingredients: ['voidessence', 'shadowdust'],
+            name: 'Oblivion Brew',
+            color: '#0d0d1a',
+            desc: 'Looking into it feels like staring into an endless abyss.',
+            effect: 'Opens a portal to any location the drinker can visualize.',
+            rarity: 'Legendary'
+        },
+        {
+            ingredients: ['windfeather', 'starbloom'],
+            name: 'Zephyr Nectar',
+            color: '#e8f0e8',
+            desc: 'The liquid floats upward if the bottle is uncorked.',
+            effect: 'Grants the power of flight for an entire day.',
+            rarity: 'Epic'
+        },
+        {
+            ingredients: ['moonwater', 'nightshade', 'crystaltear'],
+            name: 'Dreamwalker Potion',
+            color: '#7b68ee',
+            desc: 'Swirling purple and blue currents dance within.',
+            effect: 'Enter and explore the dreams of any sleeping person.',
+            rarity: 'Legendary'
+        },
+        {
+            ingredients: ['dragonscale', 'ironblood', 'sunstone'],
+            name: 'Titan Fortitude',
+            color: '#b87333',
+            desc: 'Thick as molten metal, shimmering with inner fire.',
+            effect: 'Skin becomes harder than diamond for three hours.',
+            rarity: 'Legendary'
+        },
+        {
+            ingredients: ['thundermoss', 'windfeather'],
+            name: 'Tempest Tonic',
+            color: '#87ceeb',
+            desc: 'Miniature clouds form above the liquid.',
+            effect: 'Summon and control storms at will.',
+            rarity: 'Rare'
+        },
+        {
+            ingredients: ['starbloom', 'voidessence', 'phoenix_ash'],
+            name: 'Cosmic Transcendence',
+            color: '#ff00ff',
+            desc: 'Contains what appears to be a tiny galaxy swirling within.',
+            effect: 'Temporarily ascend to a cosmic being with immense power.',
+            rarity: 'Mythic'
+        },
+        {
+            ingredients: ['crystaltear', 'sunstone'],
+            name: 'Prism Elixir',
+            color: '#ff69b4',
+            desc: 'Refracts light into dazzling rainbow patterns.',
+            effect: 'Project powerful illusions that fool all senses.',
+            rarity: 'Epic'
+        },
+        {
+            ingredients: ['nightshade', 'dragonscale', 'moonwater'],
+            name: 'Draconic Sight',
+            color: '#800020',
+            desc: 'Deep crimson with flecks of silver floating within.',
+            effect: 'See through any deception and perceive hidden truths.',
+            rarity: 'Legendary'
+        },
+        {
+            ingredients: ['ironblood', 'shadowdust', 'voidessence'],
+            name: 'Phantom Steel Brew',
+            color: '#36454f',
+            desc: 'Solid and liquid at the same time, somehow.',
+            effect: 'Phase through solid matter while maintaining physical form.',
+            rarity: 'Mythic'
+        },
+        {
+            ingredients: ['thundermoss', 'phoenix_ash', 'starbloom'],
+            name: 'Genesis Spark',
+            color: '#00ff7f',
+            desc: 'Pulsates with the rhythm of creation itself.',
+            effect: 'Bring any non-living object to life with a will of its own.',
+            rarity: 'Mythic'
+        },
+        {
+            ingredients: ['windfeather', 'moonwater', 'shadowdust'],
+            name: 'Whisperwind Draught',
+            color: '#c8b8d8',
+            desc: 'Constantly shifting like morning mist.',
+            effect: 'Hear every whisper and secret within a mile radius.',
+            rarity: 'Epic'
+        },
+        {
+            ingredients: ['dragonscale', 'crystaltear'],
+            name: 'Glacial Fury',
+            color: '#4fc3f7',
+            desc: 'Steam rises from ice that forms and melts endlessly.',
+            effect: 'Command both fire and ice simultaneously in devastating blasts.',
+            rarity: 'Rare'
+        },
+        {
+            ingredients: ['sunstone', 'moonwater', 'voidessence'],
+            name: 'Eclipse Elixir',
+            color: '#1a0533',
+            desc: 'Half the vial glows gold, the other half is pure darkness.',
+            effect: 'Bend time itself, slowing or speeding moments at will.',
+            rarity: 'Mythic'
+        },
+        {
+            ingredients: ['nightshade', 'thundermoss', 'ironblood'],
+            name: 'Plague Doctor Remedy',
+            color: '#556b2f',
+            desc: 'Smells terrible but bubbles with potent energy.',
+            effect: 'Cure any disease, poison, or curse ever conceived.',
+            rarity: 'Legendary'
+        },
+        {
+            ingredients: ['windfeather', 'dragonscale', 'phoenix_ash', 'voidessence'],
+            name: 'Apotheosis',
+            color: '#ffd700',
+            desc: 'The ultimate potion. Reality warps around the bottle itself.',
+            effect: 'Become an immortal being of pure magical energy for one day.',
+            rarity: 'Transcendent'
+        }
+    ];
+
+    const failurePotions = [
+        { name: 'Fizzy Disappointment', desc: 'It just... fizzes. And smells like old socks.', color: '#7a7a5a' },
+        { name: 'Mundane Sludge', desc: 'A thick grey paste. Might work as grout, actually.', color: '#5a5a5a' },
+        { name: 'Confused Concoction', desc: 'The ingredients seem to be arguing with each other inside the bottle.', color: '#8a6a5a' },
+        { name: 'Bottled Regret', desc: 'It makes a sad whistling sound when you shake it.', color: '#6a5a7a' },
+        { name: 'Alchemist Tears', desc: 'Clear as water. Tastes like broken dreams and wasted Tuesday afternoons.', color: '#9aaaba' },
+        { name: 'Volatile Nothing', desc: 'It exploded. There is nothing left. Not even shame.', color: '#4a3a3a' },
+        { name: 'Lukewarm Surprise', desc: 'It is neither warm nor cool. The surprise is that it does absolutely nothing.', color: '#aa9a6a' },
+        { name: 'Essence of Confusion', desc: 'You forgot what you were trying to make. So did the potion.', color: '#7a5aaa' },
+        { name: 'Bubbling Mediocrity', desc: 'Bubbles enthusiastically but achieves nothing. Like a middle manager.', color: '#6a8a6a' },
+        { name: 'Potion of Minor Inconvenience', desc: 'Causes shoelaces to untie themselves for the next hour.', color: '#aa7a5a' }
+    ];
+
+    let currentIngredients = [];
+    let discoveredRecipes = new Set();
+    let brewCount = 0;
+    let recipeBookOpen = false;
+
+    // Initialize
+    function init() {
+        createStars();
+        createFire();
+        renderIngredients();
+        updateStats();
+        renderRecipeBook();
+        startBubbles();
+        startSmoke();
+        loadProgress();
+    }
+
+    function createStars() {
+        const container = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 5 + 's';
+            star.style.animationDuration = (2 + Math.random() * 4) + 's';
+            star.style.width = (1 + Math.random() * 2) + 'px';
+            star.style.height = star.style.width;
+            container.appendChild(star);
+        }
+    }
+
+    function createFire() {
+        const container = document.getElementById('fireContainer');
+        const colors = ['#ff4500', '#ff6a00', '#ff8c00', '#ffa500', '#ff4500', '#ff6a00', '#ff8c00'];
+        for (let i = 0; i < 7; i++) {
+            const flame = document.createElement('div');
+            flame.className = 'flame';
+            flame.style.background = `linear-gradient(to top, ${colors[i]}, #ff0 80%, transparent)`;
+            flame.style.animationName = i % 2 === 0 ? 'flicker1' : 'flicker2';
+            flame.style.animationDelay = (Math.random() * 0.3) + 's';
+            flame.style.height = (20 + Math.random() * 15) + 'px';
+            container.appendChild(flame);
+        }
+    }
+
+    function renderIngredients() {
+        const grid = document.getElementById('ingredientGrid');
+        grid.innerHTML = '';
+        ingredients.forEach(ing => {
+            const div = document.createElement('div');
+            div.className = 'ingredient';
+            div.onclick = () => addIngredient(ing);
+            div.innerHTML = `
+                <div class="ingredient-icon">
+                    <svg width="30" height="35" viewBox="0 0 30 35">
+                        <path d="M10 0 L20 0 L20 10 L27 25 Q28 30 25 33 L5 33 Q2 30 3 25 L10 10 Z" 
+                              fill="${ing.color}" opacity="0.6" stroke="${ing.color}" stroke-width="1"/>
+                        <path d="M10 0 L20 0 L20 10 L27 25 Q28 30 25 33 L5 33 Q2 30 3 25 L10 10 Z" 
+                              fill="none" stroke="${ing.color}" stroke-width="1.5"/>
+                        <rect x="8" y="0" width="14" height="4" rx="1" fill="${ing.color}" opacity="0.8"/>
+                    </svg>
+                </div>
+                <div class="ingredient-name">${ing.name}</div>
+                <div class="ingredient-desc">${ing.desc}</div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    function addIngredient(ing) {
+        if (currentIngredients.length >= 4) {
+            shakeElement(document.getElementById('currentIngredients'));
+            return;
+        }
+        if (currentIngredients.find(i => i.id === ing.id)) {
+            shakeElement(document.getElementById('currentIngredients'));
+            return;
+        }
+        currentIngredients.push(ing);
+        updateCauldronDisplay();
+        updateCauldronVisual();
+        createAddEffect(ing.color);
+    }
+
+    function removeIngredient(id) {
+        currentIngredients = currentIngredients.filter(i => i.id !== id);
+        updateCauldronDisplay();
+        updateCauldronVisual();
+    }
+
+    function updateCauldronDisplay() {
+        const container = document.getElementById('ingredientTags');
+        if (currentIngredients.length === 0) {
+            container.innerHTML = '<span style="color: #4a4a5a; font-style: italic; font-size: 0.85rem;">Empty - add ingredients!</span>';
+            return;
+        }
+        container.innerHTML = '';
+        currentIngredients.forEach(ing => {
+            const tag = document.createElement('span');
+            tag.className = 'ingredient-tag';
+            tag.style.borderColor = ing.color;
+            tag.style.color = ing.color;
+            tag.style.background = ing.color + '15';
+            tag.textContent = ing.name;
+            tag.title = 'Click to remove';
+            tag.onclick = () => removeIngredient(ing.id);
+            container.appendChild(tag);
+        });
+    }
+
+    function updateCauldronVisual() {
+        const liquid = document.getElementById('cauldronLiquid');
+        const cauldron = document.getElementById('cauldron');
+        if (currentIngredients.length === 0) {
+            liquid.style.background = 'transparent';
+            liquid.style.height = '0%';
+            cauldron.style.setProperty('--glow-color', '#6b1d9e');
+            return;
+        }
+        const mixedColor = mixColors(currentIngredients.map(i => i.color));
+        liquid.style.background = `radial-gradient(ellipse at center, ${mixedColor}, ${darkenColor(mixedColor, 40)})`;
+        liquid.style.height = (30 + currentIngredients.length * 12) + '%';
+        cauldron.style.setProperty('--glow-color', mixedColor);
+    }
+
+    function mixColors(colors) {
+        let r = 0, g = 0, b = 0;
+        colors.forEach(c => {
+            const rgb = hexToRgb(c);
+            r += rgb.r;
+            g += rgb.g;
+            b += rgb.b;
+        });
+        r = Math.round(r / colors.length);
+        g = Math.round(g / colors.length);
+        b = Math.round(b / colors.length);
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function hexToRgb(hex) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+        return {
+            r: parseInt(hex.substr(0, 2), 16),
+            g: parseInt(hex.substr(2, 2), 16),
+            b: parseInt(hex.substr(4, 2), 16)
+        };
+    }
+
+    function darkenColor(color, amount) {
+        const match = color.match(/\d+/g);
+        if (!match) return color;
+        const r = Math.max(0, parseInt(match[0]) - amount);
+        const g = Math.max(0, parseInt(match[1]) - amount);
+        const b = Math.max(0, parseInt(match[2]) - amount);
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function brewPotion() {
+        if (currentIngredients.length < 2) {
+            shakeElement(document.getElementById('brewBtn'));
+            updateHint('You need at least 2 ingredients to brew a potion!');
+            return;
+        }
+
+        brewCount++;
+        const ids = currentIngredients.map(i => i.id).sort();
+        let foundRecipe = null;
+
+        for (const recipe of recipes) {
+            const recipeIds = [...recipe.ingredients].sort();
+            if (ids.length === recipeIds.length && ids.every((id, idx) => id === recipeIds[idx])) {
+                foundRecipe = recipe;
+                break;
+            }
+        }
+
+        if (foundRecipe) {
+            discoveredRecipes.add(foundRecipe.name);
+            showResult(foundRecipe, true);
+            createSuccessEffect(foundRecipe.color);
+            updateHint(getSuccessHint());
+        } else {
+            const fail = failurePotions[Math.floor(Math.random() * failurePotions.length)];
+            showResult(fail, false);
+            createFailEffect();
+            updateHint(getFailHint());
+        }
+
+        updateStats();
+        renderRecipeBook();
+        saveProgress();
+
+        setTimeout(() => {
+            clearCauldron();
+        }, 500);
+    }
+
+    function showResult(potion, success) {
+        const area = document.getElementById('resultArea');
+        const rarityColors = {
+            'Common': '#2ecc71',
+            'Rare': '#3498db',
+            'Epic': '#9b59b6',
+            'Legendary': '#f39c12',
+            'Mythic': '#e74c3c',
+            'Transcendent': '#ff00ff'
+        };
+
+        const rarityColor = success ? (rarityColors[potion.rarity] || '#888') : '#c0392b';
+
+        const card = document.createElement('div');
+        card.className = `result-card ${success ? 'success' : 'failure'}`;
+        card.innerHTML = `
+            <div class="potion-name" style="color: ${potion.color || rarityColor};">${potion.name}</div>
+            ${success ? `<span class="title-badge" style="background: ${rarityColor}22; color: ${rarityColor}; border: 1px solid ${rarityColor};">${potion.rarity}</span>` : '<span class="title-badge" style="background: #c0392b22; color: #c0392b; border: 1px solid #c0392b;">Failed Brew</span>'}
+            <div class="potion-desc" style="margin-top: 8px;">${potion.desc}</div>
+            ${potion.effect ? `<div class="potion-effect" style="border: 1px solid ${rarityColor}33; color: ${rarityColor};">Effect: ${potion.effect}</div>` : ''}
+        `;
+
+        area.insertBefore(card, area.firstChild);
+
+        if (area.children.length > 5) {
+            area.removeChild(area.lastChild);
+        }
+    }
+
+    function clearCauldron() {
+        currentIngredients = [];
+        updateCauldronDisplay();
+        updateCauldronVisual();
+    }
+
+    function randomBrew() {
+        clearCauldron();
+        const count = 2 + Math.floor(Math.random() * 3);
+        const shuffled = [...ingredients].sort(() => Math.random() - 0.5);
+        for (let i = 0; i < count && i < shuffled.length; i++) {
+            currentIngredients.push(shuffled[i]);
+        }
+        updateCauldronDisplay();
+        updateCauldronVisual();
+        setTimeout(() => brewPotion(), 800);
+    }
+
+    function updateStats() {
+        document.getElementById('discoveredCount').textContent = discoveredRecipes.size;
+        document.getElementById('totalRecipes').textContent = recipes.length;
+        document.getElementById('brewCount').textContent = brewCount;
+
+        const pct = (discoveredRecipes.size / recipes.length) * 100;
+        document.getElementById('progressFill').style.width = pct + '%';
+
+        let title = 'Novice';
+        if (discoveredRecipes.size >= 20) title = 'Archmage';
+        else if (discoveredRecipes.size >= 15) title = 'Grand Alchemist';
+        else if (discoveredRecipes.size >= 10) title = 'Master Brewer';
+        else if (discoveredRecipes.size >= 7) title = 'Alchemist';
+        else if (discoveredRecipes.size >= 4) title = 'Apprentice';
+        else if (discoveredRecipes.size >= 1) title = 'Initiate';
+        document.getElementById('titleDisplay').textContent = title;
+    }
+
+    function renderRecipeBook() {
+        const list = document.getElementById('recipeList');
+        list.innerHTML = '';
+
+        const rarityOrder = { 'Common': 0, 'Rare': 1, 'Epic': 2, 'Legendary': 3, 'Mythic': 4, 'Transcendent': 5 };
+        const rarityColors = {
+            'Common': '#2ecc71', 'Rare': '#3498db', 'Epic': '#9b59b6',
+            'Legendary': '#f39c12', 'Mythic': '#e74c3c', 'Transcendent': '#ff00ff'
+        };
+
+        const sorted = [...recipes].sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity]);
+
+        sorted.forEach(recipe => {
+            const discovered = discoveredRecipes.has(recipe.name);
+            const entry = document.createElement('div');
+            entry.className = 'recipe-entry';
+
+            if (discovered) {
+                entry.innerHTML = `
+                    <span class="discovered">${recipe.name}</span>
+                    <span class="title-badge" style="background: ${rarityColors[recipe.rarity]}22; color: ${rarityColors[recipe.rarity]}; border: 1px solid ${rarityColors[recipe.rarity]}; font-size: 0.7rem;">${recipe.rarity}</span>
+                `;
+            } else {
+                const hint = recipe.ingredients.length + ' ingredients needed';
+                entry.innerHTML = `
+                    <span class="undiscovered">??? Undiscovered ???</span>
+                    <span style="color: #4a4a5a; font-size: 0.75rem;">${hint}</span>
+                `;
+            }
+            list.appendChild(entry);
+        });
+    }
+
+    function toggleRecipeBook() {
+        const list = document.getElementById('recipeList');
+        recipeBookOpen = !recipeBookOpen;
+        list.style.display = recipeBookOpen ? 'block' : 'none';
+    }
+
+    function startBubbles() {
+        setInterval(() => {
+            if (currentIngredients.length === 0) return;
+            const container = document.getElementById('bubbleContainer');
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = 4 + Math.random() * 10;
+            bubble.style.width = size + 'px';
+            bubble.style.height = size + 'px';
+            bubble.style.left = (10 + Math.random() * 80) + '%';
+            bubble.style.bottom = '10px';
+
+            if (currentIngredients.length > 0) {
+                const randIng = currentIngredients[Math.floor(Math.random() * currentIngredients.length)];
+                bubble.style.background = randIng.color;
+            } else {
+                bubble.style.background = '#6b1d9e';
+            }
+
+            bubble.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+            container.appendChild(bubble);
+
+            setTimeout(() => bubble.remove(), 3000);
+        }, 300);
+    }
+
+    function startSmoke() {
+        setInterval(() => {
+            const container = document.getElementById('smokeContainer');
+            const smoke = document.createElement('div');
+            smoke.className = 'smoke';
+            smoke.style.left = (30 + Math.random() * 40) + '%';
+            smoke.style.bottom = '0';
+
+            let smokeColor = 'rgba(100, 100, 120, 0.3)';
+            if (currentIngredients.length > 0) {
+                const randIng = currentIngredients[Math.floor(Math.random() * currentIngredients.length)];
+                smokeColor = randIng.color + '40';
+            }
+            smoke.style.background = smokeColor;
+            smoke.style.animationDuration = (2 + Math.random() * 2) + 's';
+            container.appendChild(smoke);
+
+            setTimeout(() => smoke.remove(), 4000);
+        }, 500);
+    }
+
+    function createAddEffect(color) {
+        const cauldron = document.getElementById('cauldron');
+        const rect = cauldron.getBoundingClientRect();
+        for (let i = 0; i < 5; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle-effect';
+            sparkle.style.left = (rect.left + rect.width * 0.2 + Math.random() * rect.width * 0.6) + 'px';
+            sparkle.style.top = (rect.top + 20 + Math.random() * 30) + 'px';
+            sparkle.style.animationDelay = (Math.random() * 0.3) + 's';
+            sparkle.querySelector
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+    }
+
+    function createSuccessEffect(color) {
+        const cauldron = document.getElementById('cauldron');
+        const rect = cauldron.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 3;
+
+        const exp = document.createElement('div');
+        exp.className = 'explosion-effect';
+        exp.style.left = (cx - 20) + 'px';
+        exp.style.top = (cy - 20) + 'px';
+        exp.style.width = '40px';
+        exp.style.height = '40px';
+        exp.style.background = `radial-gradient(circle, ${color}, transparent)`;
+        document.body.appendChild(exp);
+        setTimeout(() => exp.remove(), 1000);
+
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle-effect';
+                sparkle.style.left = (cx - 60 + Math.random() * 120) + 'px';
+                sparkle.style.top = (cy - 60 + Math.random() * 80) + 'px';
+                document.body.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 1000);
+            }, Math.random() * 500);
+        }
+    }
+
+    function createFailEffect() {
+        const cauldron = document.getElementById('cauldron');
+        const rect = cauldron.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 3;
+
+        for (let i = 0; i < 8; i++) {
+            const puff = document.createElement('div');
+            puff.className = 'explosion-effect';
+            puff.style.left = (cx - 10 + (Math.random() - 0.5) * 80) + 'px';
+            puff.style.top = (cy - 10 + (Math.random() - 0.5) * 40) + 'px';
+            puff.style.width = '20px';
+            puff.style.height = '20px';
+            puff.style.background = 'radial-gradient(circle, rgba(100,100,100,0.5), transparent)';
+            puff.style.animationDelay = (Math.random() * 0.3) + 's';
+            document.body.appendChild(puff);
+            setTimeout(() => puff.remove(), 1500);
+        }
+    }
+
+    function shakeElement(el) {
+        el.style.transition = 'transform 0.1s';
+        el.style.transform = 'translateX(-5px)';
+        setTimeout(() => el.style.transform = 'translateX(5px)', 100);
+        setTimeout(() => el.style.transform = 'translateX(-3px)', 200);
+        setTimeout(() => el.style.transform = 'translateX(3px)', 300);
+        setTimeout(() => el.style.transform = 'translateX(0)', 400);
+    }
+
+    function updateHint(text) {
+        document.getElementById('hintBox').textContent = text;
+    }
+
+    function getSuccessHint() {
+        const hints = [
+            'Magnificent! That potion turned out perfectly!',
+            'The ancient alchemists would be proud!',
+            'Your brewing skill grows stronger!',
+            'A successful brew! Try combining more exotic ingredients!',
+            'Excellent work! Can you discover them all?',
+            'The cauldron hums with approval!',
+            'A masterful combination! Keep experimenting!',
+            'Your recipe book grows ever thicker!',
+        ];
+        return hints[Math.floor(Math.random() * hints.length)];
+    }
+
+    function getFailHint() {
+        const hints = [
+            'Not every brew succeeds... try different combinations!',
+            'The cauldron rejects this mixture. Experiment more!',
+            'Hmm, that was not quite right. Keep trying!',
+            'Some ingredients work better with others. Read their descriptions!',
+            'Failure is the first step to mastery. Brew on!',
+            'The ingredients clashed. Perhaps a different pairing?',
+            'Do not give up! There are many secrets to uncover.',
+            'Try mixing ingredients from different categories!',
+        ];
+        return hints[Math.floor(Math.random() * hints.length)];
+    }
+
+    function saveProgress() {
+        try {
+            const data = {
+                discovered: Array.from(discoveredRecipes),
+                brews: brewCount
+            };
+            localStorage.setItem('potionLabProgress', JSON.stringify(data));
+        } catch (e) {}
+    }
+
+    function loadProgress() {
+        try {
+            const data = JSON.parse(localStorage.getItem('potionLabProgress'));
+            if (data) {
+                discoveredRecipes = new Set(data.discovered || []);
+                brewCount = data.brews || 0;
+                updateStats();
+                renderRecipeBook();
+            }
+        } catch (e) {}
+    }
+
+    init();
+</script>
+
+</body>
+</html>
+
